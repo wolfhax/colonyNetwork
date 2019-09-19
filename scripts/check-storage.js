@@ -28,8 +28,22 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/extensions/CoinMachineFactory.sol",
       "contracts/extensions/FundingQueue.sol",
       "contracts/extensions/FundingQueueFactory.sol",
+      "contracts/extensions/ExtensionManager.sol",
+      "contracts/extensions/ColonyExtension.sol",
       "contracts/extensions/OneTxPayment.sol",
       "contracts/extensions/OneTxPaymentFactory.sol",
+      "contracts/CommonAuthority.sol",
+      "contracts/ColonyAuthority.sol",
+      "contracts/ColonyNetworkAuthority.sol",
+      "contracts/ColonyNetworkStorage.sol",
+      "contracts/ColonyStorage.sol",
+      "contracts/CommonStorage.sol",
+      "contracts/DomainRoles.sol",
+      "contracts/EtherRouter.sol",
+      "contracts/Migrations.sol",
+      "contracts/Resolver.sol",
+      "contracts/TokenLockingStorage.sol",
+      "contracts/PatriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
       "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/reputationMiningCycle/ReputationMiningCycleStorage.sol",
