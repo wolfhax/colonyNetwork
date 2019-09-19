@@ -93,6 +93,8 @@ contract ColonyAuthority is CommonAuthority {
 
     addRoleCapability(ROOT_ROLE, "setAnnualMetaColonyStipend(uint256)");
     addRoleCapability(ROOT_ROLE, "setReputationMiningCycleReward(uint256)");
+
+    addRoleCapability(ROOT_ROLE, "addExtension(address,bytes32,uint256,address,uint8[])");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
