@@ -20,6 +20,21 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
+### `addExtension`
+
+Add a new extension/version to the ExtensionManager.
+
+*Note: Calls `ExtensionManager.addExtension`.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|_resolver|address|The deployed resolver containing the extension contract logic
+|_roles|uint8[]|An array containing the roles required by the extension
+
+
 ### `addr`
 
 Returns the address the supplied node resolves do, if we are the resolver.
@@ -116,6 +131,24 @@ Used by a user to claim any mining rewards due to them. This will place them in 
 
 ### `createColony`
 
+Creates a new colony in the network, at version 3
+
+*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
 Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options
 
 *Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
@@ -129,24 +162,6 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 |_colonyName|string|The label to register (if null, no label is registered)
 |_orbitdb|string|The path of the orbitDB database associated with the user profile
 |_useExtensionManager|bool|If true, give the ExtensionManager the root role in the colony
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|colonyAddress|address|Address of the newly created colony
-
-### `createColony`
-
-Creates a new colony in the network, at version 3
-
-*Note: This is now deprecated and will be removed in a future version*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
 
 **Return Parameters**
 
@@ -177,6 +192,18 @@ Mark a global skill as deprecated which stops new tasks and payments from using 
 |---|---|---|
 |_skillId|uint256|Id of the skill
 
+
+### `getAnnualMetaColonyStipend`
+
+Called to get the total per-cycle reputation mining reward.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
 
 ### `getChildSkillId`
 
@@ -265,6 +292,18 @@ Returns the address of the ENSRegistrar for the Network.
 |Name|Type|Description|
 |---|---|---|
 |address|address|The address the ENSRegistrar resolves to
+
+### `getExtensionManager`
+
+Get the address for the ExtensionManager.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionManagerAddress|address|Address of the ExtensionManager contract
 
 ### `getFeeInverse`
 
@@ -406,6 +445,18 @@ Get the address of either the active or inactive reputation mining cycle, based 
 |---|---|---|
 |repMiningCycleAddress|address|address of active or inactive ReputationMiningCycle
 
+### `getReputationMiningCycleReward`
+
+Called to get the total per-cycle reputation mining reward.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
+
 ### `getReputationMiningSkillId`
 
 Get the `skillId` of the reputation mining skill. Only set once the metacolony is set up.
@@ -535,6 +586,13 @@ Check if specific address is a colony created on colony network.
 |---|---|---|
 |addressIsColony|bool|true if specified address is a colony, otherwise false
 
+### `issueMetaColonyStipend`
+
+Called to issue the metaColony stipend. This public function can be called by anyone at any interval, and an appropriate amount of CLNY will be minted based on the time since the last time it was called.
+
+
+
+
 ### `lookupRegisteredENSDomain`
 
 Reverse lookup a username from an address.
@@ -606,6 +664,31 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
+### `setAnnualMetaColonyStipend`
+
+Called to set the metaColony stipend. This value will be the total amount of CLNY created for the metacolony in a single year. The corresponding `issueMetaColonyStipend` function can be called at any interval.
+
+*Note: Can only be called by the MetaColony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|The amount of CLNY to issue to the metacolony every year
+
+
+### `setExtensionManager`
+
+Set the address for the ExtensionManager.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_extensionManagerAddress|address|Address of the ExtensionManager contract
+
+
 ### `setFeeInverse`
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
@@ -650,6 +733,34 @@ Set a replacement log entry if we're in recovery mode.
 |_nPreviousUpdates|uint128|The number of updates in the log before this entry
 
 
+### `setReputationMiningCycleReward`
+
+Called to set the total per-cycle reputation reward, which will be split between all miners.
+
+*Note: Can only be called by the MetaColony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|
+
+
+### `setReputationRootHash`
+
+This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently calls the new version if it is called (essentially, removing the `reward` parameter.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The reputation root hash
+|newNLeaves|uint256|The updated leaves count value
+|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
+|reward|uint256|Amount of CLNY to be distributed as reward to miners (not used)
+
+
 ### `setReputationRootHash`
 
 Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
@@ -662,7 +773,6 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |newHash|bytes32|The reputation root hash
 |newNLeaves|uint256|The updated leaves count value
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-|reward|uint256|Amount of CLNY to be distributed as reward to miners
 
 
 ### `setTokenLocking`
