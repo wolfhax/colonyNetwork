@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 import "./../common/IEtherRouter.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
-import "./extensions/ExtensionManager.sol";
+import "./IEtherRouter.sol";
 
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {
@@ -283,10 +283,16 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addColonyVersion(_version, _resolver);
   }
 
-  function addExtension(address _manager, bytes32 _extensionId, address _resolver, uint8[] memory _roles)
+  function setExtensionManager(address _extensionManagerAddress)
   public stoppable auth
   {
-    ExtensionManager(_manager).addExtension(_extensionId, _resolver, _roles);
+    IColonyNetwork(colonyNetworkAddress).setExtensionManager(_extensionManagerAddress);
+  }
+
+  function addExtension(bytes32 _extensionId, address _resolver, uint8[] memory _roles)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).addExtension(_extensionId, _resolver, _roles);
   }
 
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
@@ -390,8 +396,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     sig = bytes4(keccak256("mintTokensFor(address,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
-    // Add extension manager support
-    sig = bytes4(keccak256("addExtension(address,bytes32,uint256,address,uint8[])"));
+    // Add extension manager functionality
+    sig = bytes4(keccak256("setExtensionManager(address)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("addExtension(address,bytes32,address,uint8[])""));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
@@ -413,7 +421,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
     obligations[_user][msg.sender][_domainId] = sub(obligations[_user][msg.sender][_domainId], _amount);
-
     ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).deobligateStake(_user, _amount, token);
   }
 
