@@ -54,7 +54,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "setRootRole(address,bool)");
     addRoleCapability(ROOT_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
-    addRoleCapability(ROOT_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ROOT_ROLE, "setAdministratoinRole(uint256,uint256,address,uint256,bool)");
 
     // Managing recovery roles
     addRoleCapability(ROOT_ROLE, "setRecoveryRole(address)");
@@ -94,7 +94,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "setAnnualMetaColonyStipend(uint256)");
     addRoleCapability(ROOT_ROLE, "setReputationMiningCycleReward(uint256)");
 
-    addRoleCapability(ROOT_ROLE, "addExtension(address,bytes32,uint256,address,uint8[])");
+    addRoleCapability(ROOT_ROLE, "addExtension(bytes32,address,bytes32)");
     addRoleCapability(ROOT_ROLE, "setExtensionManager(address)");
     addRoleCapability(ARCHITECTURE_ROLE, "setUserRoles(uint256,uint256,address,uint256,bytes32,bool)");
   }
