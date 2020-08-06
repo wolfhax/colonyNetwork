@@ -2,7 +2,6 @@
 
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
-import { ethers } from "ethers";
 
 import {
   UINT256_MAX,
