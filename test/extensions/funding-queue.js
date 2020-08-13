@@ -67,6 +67,8 @@ contract("Funding Queues", (accounts) => {
   const USER1 = accounts[1];
   const MINER = accounts[5];
 
+  const WAD2 = WAD.muln(2);
+
   const HEAD = 0;
 
   const STATE_INACTIVE = 0;
@@ -134,7 +136,7 @@ contract("Funding Queues", (accounts) => {
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER1), // User1 (and 2x value)
-      makeReputationValue(WAD.muln(2), 5)
+      makeReputationValue(WAD2, 5)
     );
 
     colonyKey = makeReputationKey(colony.address, domain1.skillId);
@@ -146,7 +148,7 @@ contract("Funding Queues", (accounts) => {
     [user0Mask, user0Siblings] = await reputationTree.getProof(user0Key);
 
     user1Key = makeReputationKey(colony.address, domain1.skillId, USER1);
-    user1Value = makeReputationValue(WAD.muln(2), 5);
+    user1Value = makeReputationValue(WAD2, 5);
     [user1Mask, user1Siblings] = await reputationTree.getProof(user1Key);
 
     const rootHash = await reputationTree.getRootHash();
@@ -156,8 +158,19 @@ contract("Funding Queues", (accounts) => {
     await repCycle.confirmNewHash(0);
   });
 
-  describe("using the extension manager", async () => {
-    it("can install the extension once and uninstall if root", async () => {
+  describe("managing the extension", async () => {
+    it("can install the extension manually", async () => {
+      fundingQueue = await FundingQueue.new();
+      await fundingQueue.install(colony.address);
+
+      await checkErrorRevert(fundingQueue.install(colony.address), "extension-already-installed");
+
+      await fundingQueue.finishUpgrade();
+
+      await fundingQueue.uninstall();
+    });
+
+    it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await extensionManager.installExtension(FUNDING_QUEUE, 1, colony.address, { from: USER0 });
 
@@ -375,8 +388,8 @@ contract("Funding Queues", (accounts) => {
 
       // Put proposal2 in position 1 (3 wad support) and proposal3 in position 2 (2 wad support)
       await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposal2Id, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-      await fundingQueue.backProposal(proposal3Id, WAD.muln(2), proposal3Id, proposal2Id, user1Key, user1Value, user1Mask, user1Siblings, {
+      await fundingQueue.backProposal(proposal2Id, WAD2, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal3Id, WAD2, proposal3Id, proposal2Id, user1Key, user1Value, user1Mask, user1Siblings, {
         from: USER1,
       });
 
@@ -410,23 +423,23 @@ contract("Funding Queues", (accounts) => {
 
       // Put proposal2 in position 1 (3 wad support) and proposal3 in position 2 (1 wad support)
       await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposal2Id, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal2Id, WAD2, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       await fundingQueue.backProposal(proposal3Id, WAD, proposal3Id, proposal2Id, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       // Can't put proposal in position 1
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
+        fundingQueue.backProposal(proposalId, WAD2, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
         "funding-queue-insufficient-support"
       );
 
       // Can't put proposal in position 3
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, proposal3Id, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
+        fundingQueue.backProposal(proposalId, WAD2, proposalId, proposal3Id, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
         "funding-queue-excess-support"
       );
 
       // But can in position 2 (2 wad support) and bump proposal3 to position 3
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, proposal2Id, user1Key, user1Value, user1Mask, user1Siblings, {
+      await fundingQueue.backProposal(proposalId, WAD2, proposalId, proposal2Id, user1Key, user1Value, user1Mask, user1Siblings, {
         from: USER1,
       });
 
@@ -440,7 +453,7 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       // Put proposal in position 1 (2 wad support) and proposal2 in position 2 (1 wad support)
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await fundingQueue.cancelProposal(proposalId, HEAD, { from: USER0 });
@@ -455,7 +468,7 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       // Put proposal in position 1 (2 wad support) and proposal2 in position 2 (1 wad support)
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       // Remove support for leading proposal, move to back of queue
@@ -485,7 +498,7 @@ contract("Funding Queues", (accounts) => {
     it("can transfer 1/2 of funds after one week, with full backing", async () => {
       // Back proposal with 100% of reputation
       await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance one week
@@ -501,7 +514,7 @@ contract("Funding Queues", (accounts) => {
 
     it("can transfer 1/3 of funds after one week, with 2/3 reputation backing", async () => {
       // Back proposal with 66% of reputation
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance one week
@@ -534,7 +547,7 @@ contract("Funding Queues", (accounts) => {
     it("can transfer 3/4 of funds after two weeks, with full backing", async () => {
       // Back proposal with 100% of reputation
       await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance two weeks
@@ -550,7 +563,7 @@ contract("Funding Queues", (accounts) => {
 
     it("can transfer 5/9 of funds after two weeks, with 2/3 reputation backing", async () => {
       // Back proposal with 66% of reputation
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance two weeks
@@ -583,7 +596,7 @@ contract("Funding Queues", (accounts) => {
     it("can transfer 3/4 of funds after two weeks, one week at a time, with full backing", async () => {
       // Back proposal with 100% of reputation
       await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance one week
@@ -603,7 +616,7 @@ contract("Funding Queues", (accounts) => {
 
     it("can transfer 5/9 of funds after two weeks, one week at a time, with 2/3 reputation backing", async () => {
       // Back proposal with 66% of reputation
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance one week
@@ -648,7 +661,7 @@ contract("Funding Queues", (accounts) => {
 
       // Back proposal with 100% of reputation
       await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       // Actually just the null proposal but let's ignore that for now
       const nextId = await fundingQueue.getNextProposalId(proposalId);
@@ -694,7 +707,7 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       // Put proposal in position 1 (2 wad support) and proposal2 in position 2 (1 wad support)
-      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD2, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       // Advance a week
@@ -702,7 +715,7 @@ contract("Funding Queues", (accounts) => {
 
       // Put proposal2 in position 1 (3 wad support), which should also ping the first proposal
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
-      await fundingQueue.backProposal(proposal2Id, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal2Id, WAD2, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       // So 1 - (1 - 1/2 * 2/3) = 1/3 (33.3%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
@@ -731,6 +744,36 @@ contract("Funding Queues", (accounts) => {
       // Now a transfer occurs
       balanceAfter = await colony.getFundingPotBalance(1, token.address);
       expect(balanceBefore.sub(balanceAfter)).to.not.be.zero;
+    });
+
+    [
+      { backingRate: 5, expectedTransferred: "25320560220306561" },
+      { backingRate: 15, expectedTransferred: "75337893969140761" },
+      { backingRate: 25, expectedTransferred: "125357209866916609" },
+      { backingRate: 35, expectedTransferred: "175378868612616049" },
+      { backingRate: 45, expectedTransferred: "225403324090651555" },
+      { backingRate: 55, expectedTransferred: "275431155562114697" },
+      { backingRate: 65, expectedTransferred: "325463114181377392" },
+      { backingRate: 75, expectedTransferred: "375500191889488736" },
+      { backingRate: 85, expectedTransferred: "425543726357213310" },
+      { backingRate: 95, expectedTransferred: "475595566069256363" },
+    ].forEach(async (prop) => {
+      it(`can infer the decay rate for ${prop.backingRate}% backing`, async () => {
+        const user0Backing = WAD.divn(100).muln(prop.backingRate);
+        const user1Backing = WAD2.divn(100).muln(prop.backingRate);
+
+        await fundingQueue.backProposal(proposalId, user0Backing, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+        await fundingQueue.backProposal(proposalId, user1Backing, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+        const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+        // Advance one week
+        await forwardTime(SECONDS_PER_DAY * 7, this);
+        await fundingQueue.pingProposal(proposalId);
+
+        const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+        const amountTransferred = balanceBefore.sub(balanceAfter);
+        expect(amountTransferred).to.eq.BN(prop.expectedTransferred);
+      });
     });
   });
 });
